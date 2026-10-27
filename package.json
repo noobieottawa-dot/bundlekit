@@ -1,5 +1,5 @@
 {
-  "name": "bundlekit",
+  "name": "app",
   "private": true,
   "scripts": {
     "build": "react-router build",
@@ -30,7 +30,6 @@
     "@react-router/node": "7.18.2",
     "@react-router/serve": "7.18.2",
     "@shopify/app-bridge-react": "^4.2.4",
-    "@shopify/cli": "5.0.1",
     "@shopify/shopify-app-react-router": "^4.0.0",
     "@shopify/shopify-app-session-storage-prisma": "^11.0.0",
     "isbot": "^5.1.31",
@@ -38,7 +37,6 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router": "7.18.2",
-    "selfsigned": "^5.5.0",
     "vite-tsconfig-paths": "^5.1.4"
   },
   "devDependencies": {
@@ -61,9 +59,11 @@
     "typescript": "^5.9.3",
     "vite": "^6.3.6"
   },
-  "workspaces": [
-    "extensions/*"
-  ],
+  "workspaces": {
+    "packages": [
+      "extensions/*"
+    ]
+  },
   "trustedDependencies": [
     "@shopify/plugin-cloudflare"
   ],
@@ -78,6 +78,5 @@
     "overrides": {
       "qs": "^6.16.0"
     }
-  },
-  "author": "A097"
+  }
 }
