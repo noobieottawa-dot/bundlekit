@@ -3,7 +3,25 @@ import { useFetcher } from "react-router";
 import { authenticate } from "../shopify.server";
 
 export const loader = async ({ request }) => {
-  await authenticate.admin(request);
+  const { billing, session } = await authenticate.admin(request);
+
+  // Vérifie si le marchand a un abonnement actif
+  const { hasActivePayment } = await billing.check({
+    plans: ["Plan Pro"],
+    isTest: true,
+  });
+
+  // Si pas d'abonnement, on le redirige vers la page de facturation
+  if (!hasActivePayment) {
+    const shop = session.shop;
+    return new Response(null, {
+      status: 302,
+      headers: {
+        Location: `https://admin.shopify.com/store/${shop.split('.')[0]}/apps/bundlekit/app/billing`,
+      },
+    });
+  }
+
   return null;
 };
 
