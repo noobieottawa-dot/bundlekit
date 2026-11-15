@@ -21,9 +21,9 @@ export const loader = async ({ request }) => {
       returnUrl: `https://bundlekit.onrender.com/app`,
     });
     
-    // Utilise la redirection spécifique à Shopify pour sortir de l'iframe
+    // Utilise la redirection Shopify avec target: "_top" pour sortir de l'iframe
     const { redirect: shopifyRedirect } = await authenticate.admin(request);
-    return shopifyRedirect(confirmationUrl, { target: "_parent" });
+    return shopifyRedirect(confirmationUrl, { target: "_top" });
   }
 
   // Si abonnement actif, on redirige vers la page d'accueil de l'app
