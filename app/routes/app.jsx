@@ -2,9 +2,27 @@ import { Outlet, useLoaderData, useRouteError } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 import { authenticate } from "../shopify.server";
+import { redirect } from "react-router";
 
 export const loader = async ({ request }) => {
-  await authenticate.admin(request);
+  const { billing, apiKey } = await authenticate.admin(request);
+
+  // Vérifie l'abonnement
+  const { hasActivePayment } = await billing.check({
+    plans: ["Plan Pro"],
+    isTest: true,
+  });
+
+  // Si pas d'abonnement, on redirige vers la facturation
+  if (!hasActivePayment) {
+    const confirmationUrl = await billing.request({
+      plan: "Plan Pro",
+      isTest: true,
+      returnUrl: `https://bundlekit.onrender.com/app`,
+    });
+    return redirect(confirmationUrl, { target: "_top" });
+  }
+
   return { apiKey: process.env.SHOPIFY_API_KEY || "" };
 };
 
