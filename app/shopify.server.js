@@ -16,13 +16,6 @@ const shopify = shopifyApp({
   authPathPrefix: "/auth",
   sessionStorage: new PrismaSessionStorage(prisma),
   distribution: AppDistribution.AppStore,
-  billing: {
-    "Plan Pro": {
-      amount: 0,
-      currencyCode: "USD",
-      interval: "EVERY_30_DAYS",
-    },
-  },
   future: {
     expiringOfflineAccessTokens: true,
   },
@@ -39,4 +32,3 @@ export const unauthenticated = shopify.unauthenticated;
 export const login = shopify.login;
 export const registerWebhooks = shopify.registerWebhooks;
 export const sessionStorage = shopify.sessionStorage;
-export const billing = shopify.billing;

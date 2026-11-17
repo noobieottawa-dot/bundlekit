@@ -8,7 +8,7 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { admin, session } = await authenticate.admin(request);
+  const { admin } = await authenticate.admin(request);
   const form = await request.formData();
 
   const title = String(form.get("title") || "").trim();
@@ -29,7 +29,7 @@ export const action = async ({ request }) => {
   const productIds = products.map((p) => p.id);
   const handles = products.map((p) => p.handle);
 
-  // 1. Créer la remise automatique
+  // 1. Remise automatique
   const discountRes = await admin.graphql(
     `#graphql
     mutation CreateBundleDiscount($d: DiscountAutomaticAppInput!) {
@@ -62,47 +62,45 @@ export const action = async ({ request }) => {
       },
     },
   );
-  
   const discountJson = await discountRes.json();
-  const discountErrors = discountJson.data?.discountAutomaticAppCreate?.userErrors ?? [];
-  
+  const discountErrors =
+    discountJson.data?.discountAutomaticAppCreate?.userErrors ?? [];
   if (discountErrors.length || discountJson.errors) {
     return {
-      error: discountErrors.map((e) => e.message).join(" ") || "Impossible de créer la remise.",
+      error:
+        discountErrors.map((e) => e.message).join(" ") ||
+        "Impossible de créer la remise.",
     };
   }
 
-  // 2. Écrire la metafield sur chaque produit via l'API REST/GraphQL directe
-  for (const productId of productIds) {
-    const metaRes = await admin.graphql(
-      `#graphql
-      mutation SetProductMetafield($input: ProductInput!) {
-        productUpdate(input: $input) {
-          userErrors { field message }
-        }
-      }`,
-      {
-        variables: {
-          input: {
-            id: productId,
-            metafields: [
-              {
-                namespace: "bundlekit",
-                key: "config",
-                type: "json",
-                value: JSON.stringify({ percentage, handles }),
-              }
-            ]
-          }
-        },
+  // 2. Metafield lue par le bloc de thème
+  const metaRes = await admin.graphql(
+    `#graphql
+    mutation SetBundleConfig($m: [MetafieldsSetInput!]!) {
+      metafieldsSet(metafields: $m) {
+        userErrors { field message }
       }
-    );
-    const metaJson = await metaRes.json();
-    const metaErrors = metaJson.data?.productUpdate?.userErrors ?? [];
-    if (metaErrors.length) {
-      console.error("Erreur metafield:", metaErrors);
-      return { error: "Erreur lors de l'enregistrement sur le produit : " + metaErrors.map((e) => e.message).join(" ") };
-    }
+    }`,
+    {
+      variables: {
+        m: productIds.map((ownerId) => ({
+          ownerId,
+          namespace: "bundlekit",
+          key: "config",
+          type: "json",
+          value: JSON.stringify({ percentage, handles }),
+        })),
+      },
+    },
+  );
+  const metaJson = await metaRes.json();
+  const metaErrors = metaJson.data?.metafieldsSet?.userErrors ?? [];
+  if (metaJson.errors || metaErrors.length) {
+    return {
+      error:
+        metaErrors.map((e) => e.message).join(" ") ||
+        "Impossible d'enregistrer les données du pack.",
+    };
   }
 
   return { success: true };
@@ -114,19 +112,15 @@ export default function Bundles() {
   const busy = fetcher.state !== "idle";
 
   async function pickProducts() {
-    if (window.shopify && window.shopify.resourcePicker) {
-      const selected = await window.shopify.resourcePicker({
-        type: "product",
-        multiple: 4,
-        action: "select",
-      });
-      if (selected) {
-        setProducts(
-          selected.map((p) => ({ id: p.id, title: p.title, handle: p.handle })),
-        );
-      }
-    } else {
-      alert("L'outil de sélection de produits n'est pas encore chargé. Attendez 2 secondes et réessayez.");
+    const selected = await shopify.resourcePicker({
+      type: "product",
+      multiple: 4,
+      action: "select",
+    });
+    if (selected) {
+      setProducts(
+        selected.map((p) => ({ id: p.id, title: p.title, handle: p.handle })),
+      );
     }
   }
 

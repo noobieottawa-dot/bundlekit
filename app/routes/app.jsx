@@ -4,21 +4,7 @@ import { AppProvider } from "@shopify/shopify-app-react-router/react";
 import { authenticate } from "../shopify.server";
 
 export const loader = async ({ request }) => {
-  const { billing } = await authenticate.admin(request);
-
-  // Utilise billing.require() qui gère automatiquement la redirection
-  await billing.require({
-    plans: ["Plan Pro"],
-    isTest: true,
-    onFailure: async () => {
-      await billing.request({
-        plan: "Plan Pro",
-        isTest: true,
-        returnUrl: `https://bundlekit.onrender.com/app`,
-      });
-    },
-  });
-
+  await authenticate.admin(request);
   return { apiKey: process.env.SHOPIFY_API_KEY || "" };
 };
 
@@ -26,7 +12,7 @@ export default function App() {
   const { apiKey } = useLoaderData();
 
   return (
-    <AppProvider apiKey={apiKey}>
+    <AppProvider embedded apiKey={apiKey}>
       <s-app-nav>
         <s-link href="/app">Home</s-link>
         <s-link href="/app/additional">Additional page</s-link>
@@ -37,6 +23,7 @@ export default function App() {
   );
 }
 
+// Shopify a besoin de ces deux blocs pour gérer les redirections.
 export function ErrorBoundary() {
   return boundary.error(useRouteError());
 }
